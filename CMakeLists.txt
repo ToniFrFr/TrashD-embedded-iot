@@ -38,6 +38,8 @@ target_link_libraries(TrashDEmbbedded
         freertos
         hardware_i2c
         hardware_spi
+        hardware_gpio
+        libs
         )
 
 # Add the standard include files to the build

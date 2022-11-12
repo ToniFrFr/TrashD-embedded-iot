@@ -2,6 +2,7 @@
 #include "pico/stdlib.h"
 #include "hardware/spi.h"
 #include "hardware/i2c.h"
+#include "libs/DigitalGPIO.h"
 #include <FreeRTOS.h>
 #include <task.h>
 
@@ -26,14 +27,13 @@
 
 void vBlinkLedTask(void * pvParameters) {
     const uint LED_PIN = PICO_DEFAULT_LED_PIN;
-    gpio_init(LED_PIN);
-    gpio_set_dir(LED_PIN, GPIO_OUT);
     bool ledState = false;
+    DigitalGPIO ledPin(LED_PIN, false, false);
 
     while(true) {
         ledState = !ledState;
 
-        gpio_put(LED_PIN, ledState);
+        ledPin.write(ledState);
 
         vTaskDelay(200);
     }
