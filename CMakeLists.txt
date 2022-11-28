@@ -24,6 +24,7 @@ add_executable(TrashDEmbbedded main.cpp )
 
 add_subdirectory(freertos)
 add_subdirectory(libs)
+add_subdirectory(lorawan-lib)
 
 pico_set_program_name(TrashDEmbbedded "TrashDEmbedded")
 pico_set_program_version(TrashDEmbbedded "0.1")
@@ -40,6 +41,7 @@ target_link_libraries(TrashDEmbbedded
         hardware_spi
         hardware_gpio
         libs
+        lorawan-lib
         )
 
 # Add the standard include files to the build
