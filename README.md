@@ -1,7 +1,7 @@
 # TrashD Embedded Side
 
 ## Description
-This is the embedded side software repository for TrashD-project. Goal is to develop a embedded device to calculate the level of trash within a bin and report this trash level through LoRaWAN-network to be stored in a databased and then used to further develop and analyze routes and trash pick-up times
+This is the embedded side software repository for TrashD-project. Goal is to develop a embedded device to calculate the level of trash within a bin and report this trash level through internet to be stored in a database and then used to further develop and analyze routes and trash pick-up times
 
 ## Installation and Environment setup
 Common usage material during development:
@@ -19,7 +19,7 @@ To build the project create do following:
 ```
 mkdir build (if build directory doesn't exist)
 cd build
-cmake ..
+cmake .. -DPICO_BOARD=pico_w
 make
 ```
 

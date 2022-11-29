@@ -3,6 +3,7 @@
 #include "hardware/spi.h"
 #include "hardware/i2c.h"
 #include "libs/DigitalGPIO.h"
+#include "pico/cyw43_arch.h"
 #include <FreeRTOS.h>
 #include <task.h>
 
@@ -10,21 +11,19 @@
 // This example will use I2C0 on GPIO8 (SDA) and GPIO9 (SCL) running at 400KHz.
 // Pins can be changed, see the GPIO function select table in the datasheet for information on GPIO assignments
 
-#define I2C_PORT i2c0
-#define I2C_SDA 8
-#define I2C_SCL 9
+static char ssid[] = "wifi ssid"
+static char wifipassword[] = "wifi password"
 
-void vBlinkLedTask(void * pvParameters) {
-    const uint LED_PIN = PICO_DEFAULT_LED_PIN;
+static void vBlinkLedTask(void * pvParameters) {
+    const uint blinkingLed = CYW43_WL_GPIO_LED_PIN;
     bool ledState = false;
-    DigitalGPIO ledPin(LED_PIN, false, false);
-
-    lorawan_init_otaa(&sx1276_settings, LORAWAN_REGION, &otaa_settings);
-
+    DigitalGPIO ledPin(blinkingLed, false, false);
     while(true) {
         ledState = !ledState;
 
         ledPin.write(ledState);
+
+        printf("Current led state: %d \n", ledState);
 
         vTaskDelay(200);
     }
@@ -34,7 +33,6 @@ void vBlinkLedTask(void * pvParameters) {
 int main()
 {
     stdio_init_all();
-
 
     xTaskCreate(vBlinkLedTask, "vBlinkLedTask", 256, NULL, tskIDLE_PRIORITY + 1, NULL);
     
