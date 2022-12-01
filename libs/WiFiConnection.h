@@ -17,6 +17,7 @@ public:
     WiFiConnection(std::string ssid, std::string password);
     bool isConnected();
     void connectToAP();
+    void disconnect();
     int latestErrorCode();
     ~WiFiConnection();
 };
