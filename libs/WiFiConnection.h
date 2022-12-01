@@ -2,9 +2,14 @@
 #define _WIFI_CONNECTION_H
 
 #include <stdio.h>
+#include <string>
+#include <time.h>
+
 #include "pico/stdlib.h"
 #include "pico/cyw43_arch.h"
-#include <string>
+#include "lwip/pbuf.h"
+#include "lwip/tcp.h"
+
 
 class WiFiConnection
 {
@@ -18,6 +23,7 @@ public:
     bool isConnected();
     void connectToAP();
     void disconnect();
+    void sendTCPRequest();
     int latestErrorCode();
     ~WiFiConnection();
 };
