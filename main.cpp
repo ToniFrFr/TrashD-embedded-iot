@@ -3,6 +3,7 @@
 #include "hardware/spi.h"
 #include "hardware/i2c.h"
 #include "libs/DigitalGPIO.h"
+#include "libs/WiFiConnection.h"
 #include "pico/cyw43_arch.h"
 #include <FreeRTOS.h>
 #include <task.h>
@@ -13,6 +14,21 @@
 
 static char ssid[] = "wifi ssid"
 static char wifipassword[] = "wifi password"
+
+static void vConnenctionTestTask(void * pvParameters) {
+    WiFiConnection connection(ssid, password);
+    
+    while(true) {
+        if(!connection.isConnected()) {
+            connection.connectToAP();
+
+            printf("Connected: %d", connection.isConnected());
+
+            connection.disconnect();
+
+        }
+    }
+}
 
 static void vBlinkLedTask(void * pvParameters) {
     const uint blinkingLed = CYW43_WL_GPIO_LED_PIN;

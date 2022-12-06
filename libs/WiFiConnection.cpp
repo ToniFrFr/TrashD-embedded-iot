@@ -2,7 +2,7 @@
 
 WiFiConnection::WiFiConnection(std::string ssid, std::string password) : ssid(ssid), password(password), errorCode(0), connected(false) 
 {
-
+    
 }
 
 WiFiConnection::~WiFiConnection()
