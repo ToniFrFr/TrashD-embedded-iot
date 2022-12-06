@@ -14,14 +14,15 @@ typedef struct POSTRequestData
 {
     char * ipAddress;
     char * bodyString;
+    uint16_t port;
 } POSTRequestData;
 
 
-static void tcp_setup(tcp_pcb *connPcb, std::string ipAddress, std::string postBody);
-static err_t connectCallback(void *arg, struct tcp_pcb *tpcb, err_t err);
-static err_t tcpRecvCallback(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err);
-static err_t tcpSentCallback(void *arg, struct tcp_pcb *tpcb, u16_t len);
-static void tcpErrorHandler(void *arg, err_t err);
+void tcp_setup(tcp_pcb *connPcb, POSTRequestData *data);
+err_t connectCallback(void *arg, struct tcp_pcb *tpcb, err_t err);
+err_t tcpRecvCallback(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err);
+err_t tcpSentCallback(void *arg, struct tcp_pcb *tpcb, u16_t len);
+void tcpErrorHandler(void *arg, err_t err);
 
 
 #endif

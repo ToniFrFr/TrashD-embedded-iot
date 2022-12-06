@@ -7,6 +7,8 @@
 
 #include "pico/stdlib.h"
 #include "pico/cyw43_arch.h"
+#include "TCPRequest.h"
+#include "lwip/tcp.h"
 
 
 class WiFiConnection
@@ -21,6 +23,7 @@ public:
     bool isConnected();
     void connectToAP();
     void disconnect();
+    void sendPostRequest(tcp_pcb *tpcb, POSTRequestData *data);
     int latestErrorCode();
     ~WiFiConnection();
 };

@@ -40,3 +40,6 @@ bool WiFiConnection::isConnected() {
 int WiFiConnection::latestErrorCode() {
     return this->errorCode;
 }
+void WiFiConnection::sendPostRequest(tcp_pcb *tpcb, POSTRequestData *data) {
+    tcp_setup(tpcb, data);
+}

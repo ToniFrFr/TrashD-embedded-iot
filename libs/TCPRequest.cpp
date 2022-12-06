@@ -1,38 +1,31 @@
 #include "TCPRequest.h"
 
-static void tcp_setup(tcp_pcb *connPcb, std::string ipAddress, std::string postBody)
+void tcp_setup(tcp_pcb *connPcb, POSTRequestData *data)
 {
-    char *ipAddressArg = (char *)ipAddress.c_str();
-    char *postBodyArg = (char *)ipAddress.c_str();
-
-    POSTRequestData tcpArgData;
-
-    tcpArgData.ipAddress = ipAddressArg;
-    tcpArgData.bodyString = postBodyArg;
-
     ip_addr_t ip;
 
-    ip4addr_aton(ipAddress.c_str(), &ip);
+    ip4addr_aton(data->ipAddress, &ip);
 
     connPcb = tcp_new();
 
-    tcp_arg(connPcb, &tcpArgData);
+    tcp_arg(connPcb, data);
 
     tcp_err(connPcb, tcpErrorHandler);
     tcp_recv(connPcb, tcpRecvCallback);
     tcp_sent(connPcb, tcpSentCallback);
 
-    tcp_connect(connPcb, &ip, 80, connectCallback);
+    tcp_connect(connPcb, &ip, data->port, connectCallback);
 }
 
 err_t connectCallback(void *arg, struct tcp_pcb *tpcb, err_t err)
 {
-    printf("Connected, sending packet...\n");
+    
 
     POSTRequestData *args = (POSTRequestData *)arg;
 
     std::string ipAddress = std::string(args->ipAddress);
     std::string postBody = std::string(args->bodyString);
+    uint16_t port = args->port;
 
     if (err != ERR_OK) {
         printf("Error with establishing connection\n");
@@ -40,7 +33,9 @@ err_t connectCallback(void *arg, struct tcp_pcb *tpcb, err_t err)
     }
     else
     {
-        std::string httpString = "POST /helloThere HTTP/1.1\r\nHost: " + ipAddress + "\r\nContent-Type: text/plain\r\nContent-Length: " + std::to_string(postBody.length()) + "\r\n" + postBody + "\r\n";
+        printf("Connected, sending packet...\n");
+        std::string httpString = "POST /posts HTTP/1.1\r\nHost: " + ipAddress + ":" + std::to_string(port) + "\r\nContent-Type: text/plain\r\nContent-Length: " + std::to_string(postBody.length()) + "\r\n\r\n" + postBody + "\r\n\r\n";
+        //std::string httpString = "HEAD / HTTP/1.1\r\nHost: " + ipAddress + ":8080" + "\r\n\r\n";
         uint16_t length = httpString.length();
 
         err_t error = tcp_write(tpcb, (char *)httpString.c_str(), length, TCP_WRITE_FLAG_COPY);
@@ -56,9 +51,10 @@ err_t connectCallback(void *arg, struct tcp_pcb *tpcb, err_t err)
                 printf("Error with sending the request\n");
                 return 1;
             }
+
+            printf("Http string: %s\n", httpString.c_str());
         }
     }
-
     return 0;
 }
 err_t tcpRecvCallback(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err) {
@@ -84,12 +80,12 @@ err_t tcpRecvCallback(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err
 
     return 0;
 }
-static err_t tcpSentCallback(void *arg, struct tcp_pcb *tpcb, u16_t len) {
+err_t tcpSentCallback(void *arg, struct tcp_pcb *tpcb, u16_t len) {
     printf("Client information sent to the server...\n");
 
     return ERR_OK;
 }
-static void tcpErrorHandler(void *arg, err_t err) {
+void tcpErrorHandler(void *arg, err_t err) {
     if (err != ERR_ABRT) {
         printf("tcp_client_err %d\n", err);
     } else {
