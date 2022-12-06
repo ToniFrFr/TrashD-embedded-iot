@@ -30,7 +30,7 @@ void WiFiConnection::connectToAP() {
     }
 }
 void WiFiConnection::disconnect() {
-    cyw43_arch_deinit();
+    cyw43_arch_wifi_connect_timeout_ms("", "", CYW43_AUTH_WPA2_AES_PSK, 100);
 
     this->connected = false;
 }
@@ -42,4 +42,13 @@ int WiFiConnection::latestErrorCode() {
 }
 void WiFiConnection::sendPostRequest(tcp_pcb *tpcb, POSTRequestData *data) {
     tcp_setup(tpcb, data);
+}
+void WiFiConnection::generatePostJson(int samplenr, int distance, int batterylevel, POSTRequestData &postData) {
+    std::string json = "{\n";
+    json + "\"sample_nr\": " + std::to_string(samplenr) + ", \n";
+    json + "\"garbage_level\": " + std::to_string(distance) + ", \n";
+    json + "\"battery_level\": " + std::to_string(batterylevel) + "\n";
+    json + "}";
+
+    postData.bodyString = (char *) json.c_str();
 }

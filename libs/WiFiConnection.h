@@ -23,6 +23,7 @@ public:
     bool isConnected();
     void connectToAP();
     void disconnect();
+    void generatePostJson(int samplenr,int distance, int batteryLevel, POSTRequestData &postData);
     void sendPostRequest(tcp_pcb *tpcb, POSTRequestData *data);
     int latestErrorCode();
     ~WiFiConnection();

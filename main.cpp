@@ -21,9 +21,9 @@ static void vConnenctionTestTask(void * pvParameters) {
     WiFiConnection connection(ssid, wifipassword);
     static tcp_pcb taskPcb;
     POSTRequestData reqData;
+    int sample_nr = 0;
 
     reqData.ipAddress = "192.168.10.126";
-    reqData.bodyString = "{\"msg\":\"Hello World\"}";
     reqData.port = 8080;
 
     while(true) {
@@ -34,10 +34,14 @@ static void vConnenctionTestTask(void * pvParameters) {
             printf("Already connected\n");
         }
         
+        connection.generatePostJson(sample_nr, 50, 50, reqData);
+
         connection.sendPostRequest(&taskPcb, &reqData);
 
         sleep_ms(2000);
 
+        sample_nr++;
+        
         vTaskDelay(1000);
     }
 }
