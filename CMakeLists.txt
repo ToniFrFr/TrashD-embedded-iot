@@ -19,8 +19,7 @@ project(TrashDEmbbedded C CXX ASM)
 pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
-
-add_executable(TrashDEmbbedded main.cpp )
+add_executable(TrashDEmbbedded main.cpp)
 
 add_subdirectory(freertos)
 add_subdirectory(libs)
@@ -28,13 +27,14 @@ add_subdirectory(libs)
 pico_set_program_name(TrashDEmbbedded "TrashDEmbedded")
 pico_set_program_version(TrashDEmbbedded "0.1")
 
-pico_enable_stdio_uart(TrashDEmbbedded 1)
-pico_enable_stdio_usb(TrashDEmbbedded 0)
+pico_enable_stdio_uart(TrashDEmbbedded 0)
+pico_enable_stdio_usb(TrashDEmbbedded 1)
 
 # Add the standard library to the build
 # Also add here any new library added to the libs directory
 target_link_libraries(TrashDEmbbedded
         pico_stdlib
+        pico_binary_info
         freertos
         hardware_i2c
         hardware_spi
@@ -50,5 +50,3 @@ target_include_directories(TrashDEmbbedded PRIVATE
 
 
 pico_add_extra_outputs(TrashDEmbbedded)
-
-

@@ -29,3 +29,4 @@ void DigitalGPIO::write(bool dir) {
 bool DigitalGPIO::read() {
     return gpio_get(this->pin);
 }
+
