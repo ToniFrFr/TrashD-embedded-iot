@@ -31,19 +31,6 @@ bool reserved_addr(uint8_t addr) {
 #define VL53L1X_I2C_ADDR        0x29
 #define VL53L1X_DIST_TRESHOLD   500
 
-void vBlinkLedTask(void * pvParameters) {
-    const uint LED_PIN = PICO_DEFAULT_LED_PIN;
-    bool ledState = false;
-    DigitalGPIO ledPin(LED_PIN, false, false);
-
-    while(true) {
-        ledState = !ledState;
-        ledPin.write(ledState);
-
-        vTaskDelay(200);
-    }
-}
-
 void vGetDistanceTask(void * pvParameters) {
     bool isI2CInit          = false;
     bool isSensInit         = false;
@@ -149,8 +136,6 @@ void vGetDistanceTask(void * pvParameters) {
 int main()
 {
     stdio_init_all();
-
-    xTaskCreate(vBlinkLedTask, "vBlinkLedTask", 256, NULL, tskIDLE_PRIORITY + 1, NULL);
     
     xTaskCreate(vGetDistanceTask, "vGetDistanceTask", 1024, NULL, tskIDLE_PRIORITY + 2, NULL);
     
