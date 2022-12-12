@@ -13,7 +13,7 @@
 typedef struct POSTRequestData
 {
     char * ipAddress;
-    char * bodyString;
+    std::string bodyString;
     uint16_t port;
 } POSTRequestData;
 

@@ -21,10 +21,11 @@ err_t connectCallback(void *arg, struct tcp_pcb *tpcb, err_t err)
 {
     
 
-    POSTRequestData *args = (POSTRequestData *)arg;
+    //POSTRequestData *args = (POSTRequestData *)arg;
+    POSTRequestData *args = static_cast<POSTRequestData *>(arg);
 
     std::string ipAddress = std::string(args->ipAddress);
-    std::string postBody = std::string(args->bodyString);
+    std::string postBody = args->bodyString;
     uint16_t port = args->port;
 
     if (err != ERR_OK) {

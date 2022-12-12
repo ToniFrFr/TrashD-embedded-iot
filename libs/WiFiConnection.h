@@ -23,7 +23,7 @@ public:
     bool isConnected();
     void connectToAP();
     void disconnect();
-    void generatePostJson(int samplenr,int distance, int batteryLevel, POSTRequestData &postData);
+    std::string generatePostJson(int samplenr, int device_id, int boot_id,int distance, int batterylevel);
     void sendPostRequest(tcp_pcb *tpcb, POSTRequestData *data);
     int latestErrorCode();
     ~WiFiConnection();

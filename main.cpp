@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <string>
 #include "pico/stdlib.h"
+#include "pico/sleep.h"
+#include "hardware/rtc.h"
 #include "hardware/spi.h"
 #include "hardware/i2c.h"
 #include "libs/DigitalGPIO.h"
@@ -14,64 +16,120 @@
 // This example will use I2C0 on GPIO8 (SDA) and GPIO9 (SCL) running at 400KHz.
 // Pins can be changed, see the GPIO function select table in the datasheet for information on GPIO assignments
 
-static char ssid[] = "ssid";
-static char wifipassword[] = "password";
+static char ssid[] = "OPMIKAEL";
+static char wifipassword[] = "pellemiljoona";
 
-static void vConnenctionTestTask(void * pvParameters) {
+static TaskHandle_t xConnectionTaskHandle = NULL;
+static TaskHandle_t xButtonInputTaskHandle = NULL;
+static TaskHandle_t xSleepTaskHandle = NULL;
+
+static void vConnenctionTestTask(void *pvParameters)
+{
     WiFiConnection connection(ssid, wifipassword);
     static tcp_pcb taskPcb;
     POSTRequestData reqData;
+    std::string jsonData;
     int sample_nr = 0;
 
     reqData.ipAddress = "192.168.10.126";
     reqData.port = 8080;
 
-    while(true) {
-        if(!connection.isConnected()) {
+    while (true)
+    {
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+        if (!connection.isConnected())
+        {
             connection.connectToAP();
             printf("Connected: %d\n", connection.isConnected());
-        } else {
+        }
+        else
+        {
             printf("Already connected\n");
         }
-        
-        connection.generatePostJson(sample_nr, 50, 50, reqData);
+
+        printf("Starting send...\n");
+
+        jsonData = connection.generatePostJson(sample_nr, 1, 124,50, 50);
+
+        reqData.bodyString = jsonData;
 
         connection.sendPostRequest(&taskPcb, &reqData);
 
         sleep_ms(2000);
 
         sample_nr++;
-        
-        vTaskDelay(1000);
     }
 }
 
-static void vBlinkLedTask(void * pvParameters) {
-    const uint blinkingLed = CYW43_WL_GPIO_LED_PIN;
-    bool ledState = false;
-    DigitalGPIO ledPin(blinkingLed, false, false);
-    while(true) {
-        ledState = !ledState;
+static void vButtonInputTask(void *pvParameters)
+{
+    const uint switchPin = 14;
 
-        ledPin.write(ledState);
+    DigitalGPIO switchGPIO(switchPin, true, true, true);
 
-        printf("Current led state: %d \n", ledState);
+    while (true)
+    {
+        if (switchGPIO.read())
+        {
+            printf("Read true \n");
+            xTaskNotifyGive(xConnectionTaskHandle);
+        }
+        else
+        {
+            printf("Read false \n");
+        }
+        vTaskDelay(15);
+    }
+}
+static void sleep_callback(void) {
+    printf("RTC woke us up\n");
+}
 
-        vTaskDelay(1000);
+
+extern "C" {
+    static void irq_callback(uint gpio, uint32_t events) {
+    BaseType_t xHigherPriorityTaskWoken;
+
+    xHigherPriorityTaskWoken = pdFALSE;
+
+    vTaskNotifyGiveFromISR(xConnectionTaskHandle, &xHigherPriorityTaskWoken);
+
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+}
+
+
+static void vSleepTask(void *pvParameters)
+{
+    while (true)
+    {
+        printf("Sleeping......\n");
+
+        sleep_ms(2000);
+
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
 
+static void vIRQInit(void) {
+    gpio_set_irq_enabled_with_callback(14, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &irq_callback);
+}
 
 int main()
 {
     stdio_init_all();
 
-    xTaskCreate(vBlinkLedTask, "vBlinkLedTask", 256, NULL, tskIDLE_PRIORITY + 1, NULL);
-    xTaskCreate(vConnenctionTestTask, "vConnTask", 512, NULL, tskIDLE_PRIORITY + 1, NULL);
-    
+    //xTaskCreate(vButtonInputTask, "vButtonInputTask", 256, NULL, tskIDLE_PRIORITY + 1, &xButtonInputTaskHandle);
+    xTaskCreate(vConnenctionTestTask, "vConnTask", 1024, NULL, tskIDLE_PRIORITY + 1, &xConnectionTaskHandle);
+    xTaskCreate(vSleepTask, "vSleepTask", 256, NULL, tskIDLE_PRIORITY + 1, &xSleepTaskHandle);
+    vIRQInit();
+
     vTaskStartScheduler();
 
-    while(1){};
-    
+    while (1)
+    {
+    };
+
     return 0;
 }

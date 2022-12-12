@@ -43,12 +43,14 @@ int WiFiConnection::latestErrorCode() {
 void WiFiConnection::sendPostRequest(tcp_pcb *tpcb, POSTRequestData *data) {
     tcp_setup(tpcb, data);
 }
-void WiFiConnection::generatePostJson(int samplenr, int distance, int batterylevel, POSTRequestData &postData) {
+std::string WiFiConnection::generatePostJson(int samplenr, int device_id, int boot_id,int distance, int batterylevel) {
     std::string json = "{\n";
-    json + "\"sample_nr\": " + std::to_string(samplenr) + ", \n";
-    json + "\"garbage_level\": " + std::to_string(distance) + ", \n";
-    json + "\"battery_level\": " + std::to_string(batterylevel) + "\n";
-    json + "}";
+    json += "\"device_id\": " + std::to_string(device_id) + ", \n";
+    json += "\"boot_id\": " + std::to_string(boot_id) + ", \n";
+    json += "\"sample_nr\": " + std::to_string(samplenr) + ", \n";
+    json += "\"garbage_level\": " + std::to_string(distance) + ", \n";
+    json += "\"battery_level\": " + std::to_string(batterylevel) + "\n";
+    json += "}";
 
-    postData.bodyString = (char *) json.c_str();
+    return json;
 }

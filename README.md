@@ -13,7 +13,9 @@ Project was initialized in WSL so Linux or WSL is preferred development system. 
 
 
 ## Usage
-**Note** The build requires an enviromental variable ``$PICO_SDK_PATH``. This needs to be set before running the build.
+### NOTE 
+The build requires an enviromental variable ``$PICO_SDK_PATH``. This needs to be set before running the build. The project also includes libraries from [Pico-Extras](https://github.com/raspberrypi/pico-extras, "Pico extras Github repository"), meaning that the pico-extras repository should also be cloned into the same directory where pico-sdk exists, one should read instructions from the pico-extras repository
+
 
 To build the project create do following:
 ```
