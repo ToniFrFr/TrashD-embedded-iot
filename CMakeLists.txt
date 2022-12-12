@@ -12,6 +12,7 @@ set(PICO_SDK_PATH "$ENV{PICO_SDK_PATH}")
 
 # Pull in Raspberry Pi Pico SDK (must be before project)
 include(pico_sdk_import.cmake)
+include(pico_extras_import.cmake)
 
 project(TrashDEmbbedded C CXX ASM)
 
@@ -35,10 +36,13 @@ pico_enable_stdio_usb(TrashDEmbbedded 1)
 target_link_libraries(TrashDEmbbedded
         pico_stdlib
         pico_binary_info
+        pico_cyw43_arch_lwip_threadsafe_background
         freertos
         hardware_i2c
         hardware_spi
         hardware_gpio
+        hardware_rtc
+        hardware_adc
         libs
         )
 

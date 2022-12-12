@@ -3,7 +3,7 @@
 /**
  * Create regular gpio pin
 */
-DigitalGPIO::DigitalGPIO(uint pin, bool input, bool pullup = false) : pin(pin), input(input), pullup(pullup)
+DigitalGPIO::DigitalGPIO(uint pin, bool input, bool pullup=false, bool invert=false) : pin(pin), input(input), pullup(pullup), invert(invert)
 {
     gpio_init(this->pin);
 
@@ -23,10 +23,20 @@ DigitalGPIO::~DigitalGPIO()
 }
 
 void DigitalGPIO::write(bool dir) {
-    gpio_put(this->pin, dir);
+    if(invert) {
+        gpio_put(this->pin, !dir);
+    } else {
+        gpio_put(this->pin, dir);
+    }
 }
 
 bool DigitalGPIO::read() {
-    return gpio_get(this->pin);
+    if(invert) {
+        return !gpio_get(this->pin);
+    } else {
+        return gpio_get(this->pin);
+    }
+
+    
 }
 

@@ -11,9 +11,10 @@ private:
     uint pin;
     bool input;
     bool pullup;
+    bool invert;
 
 public:
-    DigitalGPIO(uint pin, bool input, bool pullup);
+    DigitalGPIO(uint pin, bool input, bool pullup, bool invert);
     void write(bool dir);
     bool read();
     ~DigitalGPIO();
