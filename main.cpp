@@ -1,74 +1,163 @@
 #include <stdio.h>
+#include <string>
+#include <stdlib.h>
+#include <time.h>
 #include "pico/stdlib.h"
+#include "hardware/rtc.h"
 #include "hardware/spi.h"
 #include "hardware/i2c.h"
+#include "hardware/adc.h"
 #include "libs/DigitalGPIO.h"
+#include "libs/WiFiConnection.h"
+#include "pico/cyw43_arch.h"
+#include "lwip/tcp.h"
 #include <FreeRTOS.h>
 #include <task.h>
-
-// SPI Defines
-// We are going to use SPI 0, and allocate it to the following GPIO pins
-// Pins can be changed, see the GPIO function select table in the datasheet for information on GPIO assignments
-
-#define SPI_PORT spi0
-#define PIN_MISO 16
-#define PIN_CS   17
-#define PIN_SCK  18
-#define PIN_MOSI 19
-
 
 // I2C defines
 // This example will use I2C0 on GPIO8 (SDA) and GPIO9 (SCL) running at 400KHz.
 // Pins can be changed, see the GPIO function select table in the datasheet for information on GPIO assignments
 
-#define I2C_PORT i2c0
-#define I2C_SDA 8
-#define I2C_SCL 9
+static char ssid[] = "OPMIKAEL";
+static char wifipassword[] = "pellemiljoona";
 
-void vBlinkLedTask(void * pvParameters) {
-    const uint LED_PIN = PICO_DEFAULT_LED_PIN;
-    bool ledState = false;
-    DigitalGPIO ledPin(LED_PIN, false, false);
+static TaskHandle_t xConnectionTaskHandle = NULL;
+static TaskHandle_t xButtonInputTaskHandle = NULL;
+static TaskHandle_t xSleepTaskHandle = NULL;
 
-    while(true) {
-        ledState = !ledState;
+static void vConnenctionTestTask(void *pvParameters)
+{
+    WiFiConnection connection(ssid, wifipassword);
+    static tcp_pcb taskPcb;
+    POSTRequestData reqData;
+    std::string jsonData;
+    int sample_nr = 0;
+    int boot_id;
+    int device_id = 1;
+    const int adc_pin = 28;
+    uint16_t adc_read_result;
+    static float battVoltage;
+    static const float resistorVal = 100000.0f;
 
-        ledPin.write(ledState);
+    reqData.ipAddress = "192.168.65.42";
+    reqData.port = 8080;
 
-        vTaskDelay(200);
+    srand(time(NULL));
+    boot_id = rand() % 1000 + 1;
+
+    adc_init();
+    adc_gpio_init(adc_pin);
+    adc_select_input(2);
+
+    while (true)
+    {
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+        if (!connection.isConnected())
+        {
+            connection.connectToAP();
+            printf("Connected: %d\n", connection.isConnected());
+        }
+        else
+        {
+            printf("Already connected\n");
+        }
+
+        adc_read_result = adc_read();
+
+        battVoltage = (adc_read_result / (resistorVal + resistorVal)) * resistorVal;
+
+        printf("Battery Voltage: %f \n", battVoltage);
+        printf("Boot_id: %i\n", boot_id);
+
+        jsonData = connection.generatePostJson(device_id, boot_id,sample_nr, 50, battVoltage);
+
+        printf("JSONDATA: %s\n", jsonData.c_str());
+
+        reqData.bodyString = jsonData;
+
+        printf("BODYSTRING: %s\n", reqData.bodyString.c_str());
+        printf("IP ADDR: %s\n", reqData.ipAddress);
+        printf("IP PORT: %i\n", reqData.port);
+
+        printf("Starting send...\n");
+
+        connection.sendPostRequest(&taskPcb, &reqData);
+
+        sleep_ms(2000);
+
+        sample_nr++;
     }
 }
 
+static void vButtonInputTask(void *pvParameters)
+{
+    const uint switchPin = 14;
+
+    DigitalGPIO switchGPIO(switchPin, true, true, true);
+
+    while (true)
+    {
+        if (switchGPIO.read())
+        {
+            printf("Read true \n");
+            xTaskNotifyGive(xConnectionTaskHandle);
+        }
+        else
+        {
+            printf("Read false \n");
+        }
+        vTaskDelay(15);
+    }
+}
+static void sleep_callback(void) {
+    printf("RTC woke us up\n");
+}
+
+
+extern "C" {
+    static void irq_callback(uint gpio, uint32_t events) {
+    BaseType_t xHigherPriorityTaskWoken;
+
+    xHigherPriorityTaskWoken = pdFALSE;
+
+    vTaskNotifyGiveFromISR(xConnectionTaskHandle, &xHigherPriorityTaskWoken);
+
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+}
+
+
+static void vSleepTask(void *pvParameters)
+{
+    while (true)
+    {
+        printf("Sleeping......\n");
+
+        sleep_ms(2000);
+
+        vTaskDelay(pdMS_TO_TICKS(100));
+    }
+}
+
+static void vIRQInit(void) {
+    gpio_set_irq_enabled_with_callback(14, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &irq_callback);
+}
 
 int main()
 {
     stdio_init_all();
 
-    // SPI initialisation. This example will use SPI at 1MHz.
-    spi_init(SPI_PORT, 1000*1000);
-    gpio_set_function(PIN_MISO, GPIO_FUNC_SPI);
-    gpio_set_function(PIN_CS,   GPIO_FUNC_SIO);
-    gpio_set_function(PIN_SCK,  GPIO_FUNC_SPI);
-    gpio_set_function(PIN_MOSI, GPIO_FUNC_SPI);
-    
-    // Chip select is active-low, so we'll initialise it to a driven-high state
-    gpio_set_dir(PIN_CS, GPIO_OUT);
-    gpio_put(PIN_CS, 1);
-    
+    //xTaskCreate(vButtonInputTask, "vButtonInputTask", 256, NULL, tskIDLE_PRIORITY + 1, &xButtonInputTaskHandle);
+    xTaskCreate(vConnenctionTestTask, "vConnTask", 2048, NULL, tskIDLE_PRIORITY + 1, &xConnectionTaskHandle);
+    xTaskCreate(vSleepTask, "vSleepTask", 256, NULL, tskIDLE_PRIORITY + 1, &xSleepTaskHandle);
+    vIRQInit();
 
-    // I2C Initialisation. Using it at 400Khz.
-    i2c_init(I2C_PORT, 400*1000);
-    
-    gpio_set_function(I2C_SDA, GPIO_FUNC_I2C);
-    gpio_set_function(I2C_SCL, GPIO_FUNC_I2C);
-    gpio_pull_up(I2C_SDA);
-    gpio_pull_up(I2C_SCL);
-
-    xTaskCreate(vBlinkLedTask, "vBlinkLedTask", 256, NULL, tskIDLE_PRIORITY + 1, NULL);
-    
     vTaskStartScheduler();
 
-    while(1){};
-    
+    while (1)
+    {
+    };
+
     return 0;
 }
