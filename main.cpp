@@ -7,6 +7,8 @@
 #include "hardware/spi.h"
 #include "hardware/i2c.h"
 #include "hardware/adc.h"
+#include "libs/WiFiConnection.h"
+#include "libs/TCPRequest.h"
 #include "libs/DigitalGPIO.h"
 #include <FreeRTOS.h>
 #include <task.h>
@@ -26,6 +28,9 @@ bool reserved_addr(uint8_t addr) {
 // I2C defines
 // This example will use I2C0 on GPIO8 (SDA) and GPIO9 (SCL) running at 400KHz.
 // Pins can be changed, see the GPIO function select table in the datasheet for information on GPIO assignments
+#define I2C_PORT i2c0
+#define I2C_SDA 8
+#define I2C_SCL 9
 
 static char ssid[] = "OPMIKAEL";
 static char wifipassword[] = "pellemiljoona";
@@ -33,6 +38,9 @@ static char wifipassword[] = "pellemiljoona";
 static TaskHandle_t xConnectionTaskHandle = NULL;
 static TaskHandle_t xButtonInputTaskHandle = NULL;
 static TaskHandle_t xSleepTaskHandle = NULL;
+static TaskHandle_t xDistanceTaskHandle = NULL;
+
+static int iDetectedObstacle = -1;
 
 static void vConnenctionTestTask(void *pvParameters)
 {
@@ -79,7 +87,7 @@ static void vConnenctionTestTask(void *pvParameters)
         printf("Battery Voltage: %f \n", battVoltage);
         printf("Boot_id: %i\n", boot_id);
 
-        jsonData = connection.generatePostJson(device_id, boot_id,sample_nr, 50, battVoltage);
+        jsonData = connection.generatePostJson(device_id, boot_id,sample_nr, iDetectedObstacle, battVoltage);
 
         printf("JSONDATA: %s\n", jsonData.c_str());
 
@@ -119,18 +127,13 @@ static void vButtonInputTask(void *pvParameters)
         vTaskDelay(15);
     }
 }
-static void sleep_callback(void) {
-    printf("RTC woke us up\n");
-}
-
-
 extern "C" {
     static void irq_callback(uint gpio, uint32_t events) {
     BaseType_t xHigherPriorityTaskWoken;
 
     xHigherPriorityTaskWoken = pdFALSE;
 
-    vTaskNotifyGiveFromISR(xConnectionTaskHandle, &xHigherPriorityTaskWoken);
+    vTaskNotifyGiveFromISR(xDistanceTaskHandle, &xHigherPriorityTaskWoken);
 
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
@@ -171,6 +174,7 @@ void vGetDistanceTask(void * pvParameters) {
 
 
     while(true) {
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
         // If not initialized, initialize I2C. 400kHz.
         if (!isI2CInit) {
             i2c_init(i2c, 400*1000);
@@ -232,9 +236,11 @@ void vGetDistanceTask(void * pvParameters) {
                     if (est_distance_mm < VL53L1X_DIST_TRESHOLD) {
                         // Obstacle detected, do something with this!
                         printf("\n\nObstacle detected!\n\n");
+                        iDetectedObstacle = 1;
                     } else {
                         // No obstacle detected.
                         printf("\n\nNo obstacles detected\n\n");
+                        iDetectedObstacle = 0;
                     }
                     
                 }
@@ -248,8 +254,7 @@ void vGetDistanceTask(void * pvParameters) {
             }
         }
 
-        // Timing has to be configured
-        vTaskDelay(200);
+        xTaskNotifyGive(xConnectionTaskHandle);
         
     }
 }
@@ -265,7 +270,7 @@ int main()
     //xTaskCreate(vButtonInputTask, "vButtonInputTask", 256, NULL, tskIDLE_PRIORITY + 1, &xButtonInputTaskHandle);
     xTaskCreate(vConnenctionTestTask, "vConnTask", 2048, NULL, tskIDLE_PRIORITY + 1, &xConnectionTaskHandle);
     xTaskCreate(vSleepTask, "vSleepTask", 256, NULL, tskIDLE_PRIORITY + 1, &xSleepTaskHandle);
-    xTaskCreate(vGetDistanceTask, "vGetDistanceTask", 1024, NULL, tskIDLE_PRIORITY + 2, NULL);
+    xTaskCreate(vGetDistanceTask, "vGetDistanceTask", 2048, NULL, tskIDLE_PRIORITY + 2, &xDistanceTaskHandle);
     vIRQInit();
 
     vTaskStartScheduler();
