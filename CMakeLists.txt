@@ -41,8 +41,8 @@ target_link_libraries(TrashDEmbbedded
         hardware_i2c
         hardware_spi
         hardware_gpio
-        hardware_sleep
         hardware_rtc
+        hardware_adc
         libs
         )
 
