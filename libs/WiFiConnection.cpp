@@ -10,7 +10,11 @@ WiFiConnection::~WiFiConnection()
     
 }
 void WiFiConnection::connectToAP() {
-    int errorCode = 0; 
+    int errorCode = 0;
+
+    if(this->connected) {
+        return;
+    } 
     
     errorCode = cyw43_arch_init();
     if(errorCode != 0) {
