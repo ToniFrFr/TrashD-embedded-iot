@@ -26,6 +26,7 @@ err_t connectCallback(void *arg, struct tcp_pcb *tpcb, err_t err)
 
     std::string ipAddress = std::string(args->ipAddress);
     std::string postBody = args->bodyString;
+    std::string route = args->addressRoute;
     uint16_t port = args->port;
 
     if (err != ERR_OK) {
@@ -35,7 +36,7 @@ err_t connectCallback(void *arg, struct tcp_pcb *tpcb, err_t err)
     else
     {
         printf("Connected, sending packet...\n");
-        std::string httpString = "POST /posts HTTP/1.1\r\nHost: " + ipAddress + ":" + std::to_string(port) + "\r\nContent-Type: text/plain\r\nContent-Length: " + std::to_string(postBody.length()) + "\r\n\r\n" + postBody + "\r\n\r\n";
+        std::string httpString = "POST " + route + " HTTP/1.1\r\nHost: " + ipAddress + ":" + std::to_string(port) + "\r\nContent-Type: application/json\r\nContent-Length: " + std::to_string(postBody.length()) + "\r\n\r\n" + postBody + "\r\n\r\n";
         //std::string httpString = "HEAD / HTTP/1.1\r\nHost: " + ipAddress + ":8080" + "\r\n\r\n";
         uint16_t length = httpString.length();
 
@@ -52,8 +53,6 @@ err_t connectCallback(void *arg, struct tcp_pcb *tpcb, err_t err)
                 printf("Error with sending the request\n");
                 return 1;
             }
-
-            printf("Http string: %s\n", httpString.c_str());
         }
     }
     return 0;

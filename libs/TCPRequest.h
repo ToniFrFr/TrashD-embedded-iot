@@ -14,6 +14,7 @@ typedef struct POSTRequestData
 {
     char * ipAddress;
     std::string bodyString;
+    std::string addressRoute;
     uint16_t port;
 } POSTRequestData;
 
