@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <time.h>
 #include "pico/stdlib.h"
-#include "hardware/rtc.h"
 #include "hardware/spi.h"
 #include "hardware/i2c.h"
 #include "hardware/adc.h"
