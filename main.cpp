@@ -32,9 +32,11 @@ bool reserved_addr(uint8_t addr)
 #define I2C_SDA 8
 #define I2C_SCL 9
 
+//WiFi Access Point ssid and password
 static char ssid[] = "wifissid";
 static char wifipassword[] = "wifipassword";
 
+//Task handles for task notifications
 static TaskHandle_t xConnectionTaskHandle = NULL;
 static TaskHandle_t xButtonInputTaskHandle = NULL;
 static TaskHandle_t xSleepTaskHandle = NULL;
@@ -42,6 +44,14 @@ static TaskHandle_t xDistanceTaskHandle = NULL;
 
 static int iDetectedObstacle = -1;
 
+/**
+ * @brief vConnectionTask, used to handle the connecting functionality, initalizes first the random boot id and then other variables, initializes also the adc pin
+ * During the main loop first checks current connection status, attempts to connect if not connected (also has safeguard if in middle of attempting connection).
+ * If successfully conneceted, first calculates the current battery level and then generates the post JSON Object string
+ * Once POST string generated, send the post string to server and go to sleep
+ * 
+ * @param pvParameters not used for this task
+ */
 static void vConnenctionTestTask(void *pvParameters)
 {
     WiFiConnection connection(ssid, wifipassword);
@@ -58,9 +68,11 @@ static void vConnenctionTestTask(void *pvParameters)
     uint32_t currentTickCount;
     uint32_t connectCallTime;
 
+    //IP address and port for the server
     reqData.ipAddress = "192.168.65.47";
     reqData.port = 4000;
 
+    //Random boot_id generation
     srand(time(NULL));
     boot_id = rand() % 1000 + 1;
 
@@ -86,18 +98,22 @@ static void vConnenctionTestTask(void *pvParameters)
         {
             adc_read_result = adc_read();
 
+            //Battery level calculation
             battVoltage = ((adc_read_result / 4095) * 3.3f)*2;
 
+            //POST JSON string generation
             jsonData = connection.generatePostJson(device_id, boot_id, sample_nr, iDetectedObstacle, battVoltage);
 
-
+            //JSON Object string and the route where to post
             reqData.bodyString = jsonData;
             reqData.addressRoute = "/api/samples";
 
             printf("Starting send...\n");
 
+            //Sending POST request
             connection.sendPostRequest(&taskPcb, &reqData);
 
+            //Wait for POST request results
             sleep_ms(2000);
 
             sample_nr++;
@@ -153,6 +169,7 @@ extern "C"
         }
     }
 }
+//Simple sleep task to force light sleep on device when not sending
 static void vSleepTask(void *pvParameters)
 {
     while (true)
@@ -191,6 +208,7 @@ void vGetDistanceTask(void *pvParameters)
     while (true)
     {
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        //Sleep added here for send detection
         sleep_ms(2000);
         // If not initialized, initialize I2C. 400kHz.
         if (!isI2CInit)

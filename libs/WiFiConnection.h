@@ -10,7 +10,13 @@
 #include "TCPRequest.h"
 #include "lwip/tcp.h"
 
-
+/**
+ * @brief WiFiConnection class is used to as the main method of wireless communication. Class includes all that is required to do the required HTTP functionality of the embedded device
+ * Class constructor takes the wireless access point ssid and password into constructor.
+ * Private members also include the latest errorCode from the POST request and WiFi connection and the connenction status as boolean
+ * Methods should be by naming convention quite self explanatory, but the class has methods for connecting to AP, disconnecting, getting connection status, sending post request and generating JSON object string for the POST request
+ * 
+ */
 class WiFiConnection
 {
 private:

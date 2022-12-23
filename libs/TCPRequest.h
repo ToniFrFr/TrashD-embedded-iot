@@ -10,6 +10,14 @@
 #include "lwip/pbuf.h"
 #include "lwip/tcp.h"
 
+/**
+ * @brief TCPRequest includes all of the callback functions for the TCP requests and connections. The functions were developed based on different tutorials, guides and API documentation
+ * To make a request, the tcp_setup must be called first, which will then setup the TCP connection. The tcp_setup then starts to call rest of the wireless library functionality.
+ * connectCallback is called to handle connection status and context, which will then call library functions to write request options and info
+ * tcpRecvCallback is called to handle received info, tcpSentCallback when the request is sent, tcpErrorHandler handles all unexpected error states of the connection
+ * The void *arg on the callback functions is used to handle passing of programmer made arguments, in this code it includes the POSTRequestData struct
+ */
+
 typedef struct POSTRequestData
 {
     char * ipAddress;
